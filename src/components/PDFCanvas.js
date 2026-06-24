@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
@@ -15,7 +14,7 @@ function PDFCanvas({ pdfBytes }) {
   const [editValue, setEditValue] = useState("");
   const [editPosition, setEditPosition] = useState({ x: 0, y: 0 });
   const [modifications, setModifications] = useState({});
-  const [scale, setScale] = useState(1.5);
+  const [scale] = useState(1.5);
 
   // Load PDF
   useEffect(() => {
@@ -163,7 +162,7 @@ function PDFCanvas({ pdfBytes }) {
     let currentPdfBytes = pdfBytes;
 
     for (const [key, newText] of Object.entries(modifications)) {
-      const [pageNum, x, y] = key.split("-").map(Number);
+      const [, x, y] = key.split("-").map(Number);
       const originalItem = textItems.find(
         (item) => item.x === x && item.y === y
       );
@@ -176,7 +175,8 @@ function PDFCanvas({ pdfBytes }) {
       formData.append("search", originalItem.str);
       formData.append("replace", newText);
 
-      const response = await fetch("http://localhost:5000/replace-text", {
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL || "http://127.0.0.1:5000";
+      const response = await fetch(`${apiBaseUrl}/replace-text`, {
         method: "POST",
         body: formData,
       });
