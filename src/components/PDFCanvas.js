@@ -33,42 +33,70 @@ function PDFCanvas({ pdfBytes }) {
   // Render page
   useEffect(() => {
     if (!pdfDoc_js) return;
-    const renderPage = async () => {
-      const page = await pdfDoc_js.getPage(currentPage);
-      const viewport = page.getViewport({ scale });
-      const canvas = canvasRef.current;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext("2d");
+    let isActive = true;
 
+    const renderPage = async () => {
+      try {
+        const page = await pdfDoc_js.getPage(currentPage);
+        const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current;
+
+        if (!canvas || !isActive) return;
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d");
+
+        if (renderTaskRef.current) {
+          renderTaskRef.current.cancel();
+        }
+
+        renderTaskRef.current = page.render({ canvasContext: ctx, viewport });
+        await renderTaskRef.current.promise;
+
+        if (!isActive) return;
+
+        // Extract text items with positions
+        const textContent = await page.getTextContent();
+        if (!isActive) return;
+
+        const items = textContent.items.map((item) => {
+          const tx = item.transform[4] * scale;
+          const ty = viewport.height - item.transform[5] * scale;
+          return {
+            str: item.str,
+            x: tx,
+            y: ty - item.height * scale,
+            width: item.width * scale,
+            height: item.height * scale,
+            originalItem: item,
+          };
+        });
+        setTextItems(items);
+        setSelectedItem(null);
+      } catch (error) {
+        if (error?.name === "RenderingCancelledException") {
+          return;
+        }
+        if (String(error?.message || "").includes("Rendering cancelled")) {
+          return;
+        }
+        throw error;
+      }
+    };
+
+    renderPage();
+
+    return () => {
+      isActive = false;
       if (renderTaskRef.current) {
         try {
           renderTaskRef.current.cancel();
         } catch (e) {
-          // Ignore cancellation errors
+          // Ignore cancellation errors during cleanup
         }
       }
-      renderTaskRef.current = page.render({ canvasContext: ctx, viewport });
-      await renderTaskRef.current.promise;
-
-      // Extract text items with positions
-      const textContent = await page.getTextContent();
-      const items = textContent.items.map((item) => {
-        const tx = item.transform[4] * scale;
-        const ty = viewport.height - item.transform[5] * scale;
-        return {
-          str: item.str,
-          x: tx,
-          y: ty - item.height * scale,
-          width: item.width * scale,
-          height: item.height * scale,
-          originalItem: item,
-        };
-      });
-      setTextItems(items);
-      setSelectedItem(null);
     };
-    renderPage();
   }, [pdfDoc_js, currentPage, scale]);
 
   const handleCanvasClick = (e) => {
