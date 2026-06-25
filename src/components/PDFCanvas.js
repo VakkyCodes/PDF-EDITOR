@@ -195,64 +195,63 @@ function PDFCanvas({ pdfBytes }) {
 
   return (
     <div className="pdf-canvas-container">
-      <div className="toolbar">
-        <button
-          disabled={currentPage <= 1}
-          onClick={() => setCurrentPage((p) => p - 1)}
-        >
-          Previous
-        </button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          disabled={currentPage >= totalPages}
-          onClick={() => setCurrentPage((p) => p + 1)}
-        >
-          Next
-        </button>
-        <button onClick={handleReplaceAndDownload}>Download PDF</button>
+      <div className="canvas-header">
+        <div>
+          <div className="section-tag">Step 2</div>
+          <h2>Canvas editor</h2>
+          <p>
+            Click text to edit, preview the update, then download the replaced document.
+          </p>
+        </div>
+
+        <div className="toolbar">
+          <button
+            className="toolbar-button secondary"
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+          >
+            Previous
+          </button>
+          <span className="page-indicator">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            className="toolbar-button secondary"
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            Next
+          </button>
+          <button className="toolbar-button primary" onClick={handleReplaceAndDownload}>
+            Download PDF
+          </button>
+        </div>
       </div>
 
-      <p style={{ color: "#666", fontSize: "14px" }}>
-        Click on any text in the PDF to edit it
-      </p>
+      <p className="canvas-hint">Click on any text in the PDF to edit it</p>
 
-      <div style={{ position: "relative", display: "inline-block" }}>
+      <div className="canvas-stage">
         <canvas
+          className="pdf-canvas"
           ref={canvasRef}
           onClick={handleCanvasClick}
-          style={{ border: "1px solid #ccc", cursor: "text" }}
         />
 
         {selectedItem && (
-          <div
-            style={{
-              position: "absolute",
-              left: editPosition.x,
-              top: editPosition.y,
-              zIndex: 10,
-              background: "white",
-              border: "2px solid blue",
-              padding: "4px",
-              borderRadius: "4px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-            }}
-          >
+          <div className="edit-popover" style={{ left: editPosition.x, top: editPosition.y }}>
             <input
+              className="edit-input"
               autoFocus
               value={editValue}
               onChange={handleEditChange}
-              style={{
-                fontSize: `${selectedItem.height}px`,
-                border: "none",
-                outline: "none",
-                minWidth: "100px",
-              }}
             />
-            <div style={{ marginTop: "4px", display: "flex", gap: "4px" }}>
-              <button onClick={handleEditConfirm}>✓ Save</button>
-              <button onClick={() => setSelectedItem(null)}>✗ Cancel</button>
+            <div className="edit-actions">
+              <button className="toolbar-button primary small" onClick={handleEditConfirm}>
+                Save
+              </button>
+              <button className="toolbar-button secondary small" onClick={() => setSelectedItem(null)}>
+                Cancel
+              </button>
             </div>
           </div>
         )}

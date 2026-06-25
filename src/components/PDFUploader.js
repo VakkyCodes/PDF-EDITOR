@@ -17,9 +17,21 @@ function PDFUploader({ setPdfFile, setPdfBytes }) {
   };
 
   return (
-    <div className="uploader">
-      <h2>Upload your PDF</h2>
-      <input type="file" accept="application/pdf" onChange={handleFileChange} />
+    <div className="uploader-card">
+      <div className="uploader-copy">
+        <div className="section-tag">Step 1</div>
+        <h2>Upload your PDF</h2>
+        <p>
+          Drop in a document to unlock page controls, inline text editing, and instant local export.
+        </p>
+      </div>
+
+      <label className="file-dropzone">
+        <input type="file" accept="application/pdf" onChange={handleFileChange} />
+        <span className="dropzone-icon">↑</span>
+        <span className="dropzone-title">Choose PDF file</span>
+        <span className="dropzone-subtitle">Click to browse or drag a file into the browser</span>
+      </label>
     </div>
   );
 }
