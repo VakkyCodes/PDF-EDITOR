@@ -1,67 +1,92 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import PDFUploader from "./components/PDFUploader";
 import PDFCanvas from "./components/PDFCanvas";
+import NotesPanel from "./components/NotesPanel";
 import "./App.css";
 
 function App() {
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfBytes, setPdfBytes] = useState(null);
+  const notesCanvasRef = useRef(null);
+  const [activeFeature, setActiveFeature] = useState("viewer");
+
+  const featureTabs = [
+    { id: "viewer", label: "PDF Viewer", helper: "Preview pages" },
+    { id: "editing", label: "PDF Editing", helper: "Replace text" },
+    { id: "notes", label: "Notes", helper: "Annotate" },
+    { id: "proofreading", label: "Proofreading", helper: "Coming soon", muted: true },
+    { id: "compare", label: "Compare PDF", helper: "Coming soon", muted: true },
+  ];
+
+  const showPdfCanvas = activeFeature === "viewer" || activeFeature === "editing";
+  const showNotesPanel = activeFeature === "viewer" || activeFeature === "notes";
 
   return (
     <div className="app-shell">
-      <div className="background-orb background-orb-one" />
-      <div className="background-orb background-orb-two" />
+      <div className="background-glow background-glow-one" />
+      <div className="background-glow background-glow-two" />
 
       <main className="app-layout">
-        <section className="hero-panel">
-          <div className="eyebrow">Local-first PDF editing studio</div>
-          <h1>Turn static PDFs into editable documents with a cleaner, faster workflow.</h1>
-          <p className="hero-copy">
-            A polished browser-based editor for precise text replacement, instant canvas preview,
-            and local downloads without cloud friction.
-          </p>
-
-          <div className="hero-pills">
-            <span>Privacy-first</span>
-            <span>Fast canvas preview</span>
-            <span>Backend-powered replacement</span>
+        <header className="app-bar panel">
+          <div className="app-brand">
+            <div className="brand-mark">PDF</div>
+            <div>
+              <h1>PDF Editor</h1>
+              <p>Viewer, editing, and notes in one workspace</p>
+            </div>
           </div>
 
-          <div className="hero-stats">
-            <article>
-              <strong>1</strong>
-              <span>Upload your PDF</span>
-            </article>
-            <article>
-              <strong>2</strong>
-              <span>Edit text inline</span>
-            </article>
-            <article>
-              <strong>3</strong>
-              <span>Download locally</span>
-            </article>
+          <div className="app-bar-actions">
+            <span className="status-chip">Local</span>
+            <span className="status-chip">Light UI</span>
+          </div>
+        </header>
+
+        <section className="panel feature-rail">
+          <div className="feature-rail-label">Workspace</div>
+          <div className="feature-tabs">
+            {featureTabs.map((feature) => (
+              <button
+                key={feature.id}
+                type="button"
+                className={`feature-tab ${activeFeature === feature.id ? "active" : ""} ${feature.muted ? "muted" : ""}`}
+                onClick={() => setActiveFeature(feature.id)}
+              >
+                <span>{feature.label}</span>
+                <small>{feature.helper}</small>
+              </button>
+            ))}
           </div>
         </section>
 
-        <section className="workspace-grid">
-          <div className="panel panel-upload">
-            <PDFUploader setPdfFile={setPdfFile} setPdfBytes={setPdfBytes} />
-          </div>
+        <section className="panel panel-upload">
+          <PDFUploader setPdfFile={setPdfFile} setPdfBytes={setPdfBytes} />
+        </section>
 
-          <div className="panel panel-editor">
-            {pdfFile ? (
-              <PDFCanvas pdfBytes={pdfBytes} />
-            ) : (
-              <div className="empty-state">
-                <div className="empty-state-badge">Editor ready</div>
-                <h2>Upload a PDF to open the workspace</h2>
-                <p>
-                  You’ll get a refined editing surface with page controls, inline text editing,
-                  and a download action once a document is loaded.
-                </p>
-              </div>
-            )}
-          </div>
+        <section className="panel panel-workspace">
+          {pdfFile ? (
+            <div className={`workspace-split workspace-split--${activeFeature}`}>
+              {showPdfCanvas && (
+                <div className="workspace-pane workspace-canvas-pane">
+                  <PDFCanvas
+                    pdfBytes={pdfBytes}
+                    notesCanvasRef={notesCanvasRef}
+                  />
+                </div>
+              )}
+
+              {showNotesPanel && (
+                <div className="workspace-pane workspace-notes-pane">
+                  <NotesPanel canvasRef={notesCanvasRef} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-state-badge">Ready</div>
+              <h2>Upload a PDF to open viewer, editing, and notes</h2>
+            </div>
+          )}
         </section>
       </main>
     </div>

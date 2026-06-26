@@ -21,9 +21,6 @@ function PDFUploader({ setPdfFile, setPdfBytes }) {
       <div className="uploader-copy">
         <div className="section-tag">Step 1</div>
         <h2>Upload your PDF</h2>
-        <p>
-          Drop in a document to unlock page controls, inline text editing, and instant local export.
-        </p>
       </div>
 
       <label className="file-dropzone">

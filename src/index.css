@@ -5,7 +5,7 @@
 }
 
 html {
-  background: #07111f;
+  background: #f3f6fb;
 }
 
 body {
@@ -14,12 +14,17 @@ body {
   font-family: "Inter", "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #07111f;
+  background: #f3f6fb;
+  color: #0f172a;
 }
 
 button,
 input {
   font: inherit;
+}
+
+button {
+  color: inherit;
 }
 
 code {
