@@ -71,6 +71,7 @@ function App() {
                   <PDFCanvas
                     pdfBytes={pdfBytes}
                     notesCanvasRef={notesCanvasRef}
+                    activeFeature={activeFeature}
                   />
                 </div>
               )}

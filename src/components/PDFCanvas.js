@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-function PDFCanvas({ pdfBytes, notesCanvasRef }) {
+function PDFCanvas({ pdfBytes, notesCanvasRef, activeFeature = "viewer" }) {
   const canvasRef = useRef(null);
   const renderTaskRef = useRef(null);
   const [pdfDoc_js, setPdfDoc_js] = useState(null);
@@ -177,11 +178,111 @@ function PDFCanvas({ pdfBytes, notesCanvasRef }) {
         currentPdfBytes = new Uint8Array(await response.arrayBuffer());
       }
 
-      const finalBlob = new Blob([currentPdfBytes], { type: "application/pdf" });
+      const isAnnotationMode = activeFeature === "viewer" || activeFeature === "notes";
+
+      if (!isAnnotationMode) {
+        const finalBlob = new Blob([currentPdfBytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(finalBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "edited.pdf";
+        a.click();
+        return;
+      }
+
+      const editedPdfDoc_js = await pdfjsLib.getDocument({
+        data: new Uint8Array(currentPdfBytes),
+      }).promise;
+
+      const notesCanvas = notesCanvasRef?.current;
+      let notesImageBytes = null;
+      if (notesCanvas) {
+        const notesDataUrl = notesCanvas.toDataURL("image/png");
+        const notesBase64 = notesDataUrl.split(",")[1];
+        notesImageBytes = Uint8Array.from(atob(notesBase64), (c) => c.charCodeAt(0));
+      }
+
+      const finalDoc = await PDFDocument.create();
+      const font = await finalDoc.embedFont(StandardFonts.HelveticaBold);
+      const pageCount = editedPdfDoc_js.numPages;
+
+      for (let i = 0; i < pageCount; i++) {
+        const pdfPage = await editedPdfDoc_js.getPage(i + 1);
+        const viewport = pdfPage.getViewport({ scale: 2 });
+
+        const offscreen = document.createElement("canvas");
+        offscreen.width = viewport.width;
+        offscreen.height = viewport.height;
+        const ctx = offscreen.getContext("2d");
+        await pdfPage.render({ canvasContext: ctx, viewport }).promise;
+
+        const pdfPageDataUrl = offscreen.toDataURL("image/png");
+        const pdfPageBase64 = pdfPageDataUrl.split(",")[1];
+        const pdfPageImageBytes = Uint8Array.from(
+          atob(pdfPageBase64),
+          (c) => c.charCodeAt(0)
+        );
+
+        const pdfPageImage = await finalDoc.embedPng(pdfPageImageBytes);
+        const pageW = viewport.width;
+        const pageH = viewport.height;
+        const combinedPage = finalDoc.addPage([pageW * 2, pageH]);
+
+        combinedPage.drawRectangle({
+          x: 0,
+          y: 0,
+          width: pageW * 2,
+          height: pageH,
+          color: rgb(1, 1, 1),
+        });
+
+        combinedPage.drawImage(pdfPageImage, {
+          x: 0,
+          y: 0,
+          width: pageW,
+          height: pageH,
+        });
+
+        combinedPage.drawLine({
+          start: { x: pageW, y: 0 },
+          end: { x: pageW, y: pageH },
+          thickness: 1,
+          color: rgb(0.8, 0.8, 0.8),
+        });
+
+        combinedPage.drawText(`Notes — Page ${i + 1}`, {
+          x: pageW + 20,
+          y: pageH - 30,
+          size: 12,
+          font,
+          color: rgb(0.4, 0.4, 0.4),
+        });
+
+        if (notesImageBytes) {
+          const notesImage = await finalDoc.embedPng(notesImageBytes);
+          combinedPage.drawImage(notesImage, {
+            x: pageW + 20,
+            y: 20,
+            width: pageW - 40,
+            height: pageH - 60,
+          });
+        } else {
+          combinedPage.drawText("No notes added for this page.", {
+            x: pageW + 20,
+            y: pageH / 2,
+            size: 11,
+            font,
+            color: rgb(0.7, 0.7, 0.7),
+          });
+        }
+      }
+
+      const finalBytes = await finalDoc.save();
+      const finalBlob = new Blob([finalBytes], { type: "application/pdf" });
       const url = URL.createObjectURL(finalBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "edited.pdf";
+      a.download = "edited-with-notes.pdf";
       a.click();
 
     } catch (error) {
