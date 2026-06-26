@@ -29,9 +29,9 @@ function App() {
       <main className="app-layout">
         <header className="app-bar panel">
           <div className="app-brand">
-            <div className="brand-mark">PDF</div>
+            <img className="brand-mark" src="/app-logo.svg" alt="AstraPDF logo" />
             <div>
-              <h1>PDF Editor</h1>
+              <h1>AstraPDF</h1>
               <p>Viewer, editing, and notes in one workspace</p>
             </div>
           </div>
